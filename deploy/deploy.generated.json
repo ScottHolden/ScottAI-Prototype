@@ -1,0 +1,85 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.25.53.49325",
+      "templateHash": "11791477096261337506"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "AustraliaEast"
+    },
+    "acsDataLocation": {
+      "type": "string",
+      "defaultValue": "Australia"
+    },
+    "prefix": {
+      "type": "string",
+      "defaultValue": "scottai"
+    }
+  },
+  "variables": {
+    "uniqueSuffix": "[uniqueString(resourceGroup().id, parameters('prefix'), parameters('location'))]",
+    "uniqueNameFormat": "[format('{0}-{{0}}-{1}', parameters('prefix'), variables('uniqueSuffix'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.CognitiveServices/accounts/deployments",
+      "apiVersion": "2023-05-01",
+      "name": "[format('{0}/{1}', format(variables('uniqueNameFormat'), 'openai'), 'gpt-35-turbo-16k')]",
+      "sku": {
+        "name": "Standard",
+        "capacity": 20
+      },
+      "properties": {
+        "model": {
+          "format": "OpenAI",
+          "name": "gpt-35-turbo-16k"
+        },
+        "versionUpgradeOption": "OnceNewDefaultVersionAvailable"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.CognitiveServices/accounts', format(variables('uniqueNameFormat'), 'openai'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts",
+      "apiVersion": "2023-05-01",
+      "name": "[format(variables('uniqueNameFormat'), 'openai')]",
+      "location": "[parameters('location')]",
+      "kind": "OpenAI",
+      "sku": {
+        "name": "S0"
+      },
+      "properties": {
+        "customSubDomainName": "[format(variables('uniqueNameFormat'), 'openai')]"
+      }
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts",
+      "apiVersion": "2023-05-01",
+      "name": "[format(variables('uniqueNameFormat'), 'speech')]",
+      "location": "[parameters('location')]",
+      "kind": "SpeechServices",
+      "sku": {
+        "name": "S0"
+      },
+      "properties": {
+        "customSubDomainName": "[format(variables('uniqueNameFormat'), 'speech')]"
+      }
+    },
+    {
+      "type": "Microsoft.Communication/communicationServices",
+      "apiVersion": "2023-04-01-preview",
+      "name": "[format(variables('uniqueNameFormat'), 'acs')]",
+      "location": "global",
+      "properties": {
+        "dataLocation": "[parameters('acsDataLocation')]"
+      }
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "Speech": {
+    "Key": "",
+    "Region": ""
+  },
+  "ACS": {
+    "Endpoint": "",
+    "Key": ""
+  },
+  "OpenAI": {
+    "Endpoint": "",
+    "Key": "",
+    "Deployment": ""
+  }
+}
