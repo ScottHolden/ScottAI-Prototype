@@ -235,48 +235,58 @@ public class ScottAI
         teamsCall.RawIncomingAudioStream.MixedAudioBufferReceived += AudioReceived;
         logger.LogInformation("ACS SDK Ready");
 
+        // Set up our virtual mic pipeline
+        logger.LogInformation("Setting up outbound audio...");
+        await virtualMic.StartAsync(teamsCall.RawOutgoingAudioStream);
+
         // Set up our visuals
         // This is a quick OpenGL shader to render something nice to look at
         // We have feature flags to turn this off when not needed, or on machines with no GPU
-        OpenGLVideoRenderer? openGl = null;
+        IVideoRenderer? videoRenderer = null;
         VirtualCam? vc = null;
         if (flags.NoVideo)
         {
-            logger.LogInformation("Skipping OpenGL as No Video requested");
+            logger.LogInformation("Skipping VideoRenderer as No Video requested");
         }
         else
         {
             try
             {
                 logger.LogInformation("Setting up OpenGL...");
-                openGl = new OpenGLVideoRenderer(teamsCall.RenderSize, logger);
-                vc = new VirtualCam(openGl, logger);
+
+                // Configurable video renderers!
+                // OpenGL Shader - The "ghost" image
+
+                videoRenderer = new OpenGLVideoRenderer(teamsCall.RenderSize, logger);
+
+                // Fixed image
+
+                //string imagePath = "example.png";
+                //videoRenderer = new FixedImageVideoRenderer(teamsCall.RenderSize, imagePath, logger);
+
+                vc = new VirtualCam(videoRenderer, logger);
                 await vc.StartAsync(teamsCall.RawOutgoingVideoStream);
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Error starting OpenGL/VirtualCam: {exceptionMessage}", ex.Message);
-                logger.LogWarning("Disabling OpenGL, switching to No Video");
+                logger.LogWarning(ex, "Error starting VideoRenderer/VirtualCam: {exceptionMessage}", ex.Message);
+                logger.LogWarning("Disabling VideoRenderer, switching to No Video");
                 vc = null;
-                openGl?.Dispose();
-                openGl = null;
+                videoRenderer?.Dispose();
+                videoRenderer = null;
                 flags = flags with
                 {
                     NoVideo = true
                 };
             }
+            if (videoRenderer != null)
+            {
+                virtualMic.StartSpeaking += (o, e) => videoRenderer.SetAs(true);
+                virtualMic.StopSpeaking += (o, e) => videoRenderer.SetAs(false);
+                virtualMic.SpeechAmplitude += (o, e) => videoRenderer.SetAmp(e);
+            }
         }
 
-        // Set up our virtual mic pipeline
-        logger.LogInformation("Setting up outbound audio...");
-        await virtualMic.StartAsync(teamsCall.RawOutgoingAudioStream);
-        // Only attach mic to openGL if needed
-        if (openGl != null)
-        {
-            virtualMic.StartSpeaking += (o, e) => openGl.SetAs(true);
-            virtualMic.StopSpeaking += (o, e) => openGl.SetAs(false);
-            virtualMic.SpeechAmplitude += (o, e) => openGl.SetAmp(e);
-        }
 
         // We are ready to go!
         try
@@ -293,7 +303,7 @@ public class ScottAI
                     await azureSpeech.SpeechRecognizer.StartContinuousRecognitionAsync();
                     hasGreeted = true;
                     await Task.Delay(1500);
-                    openGl?.FadeIn();
+                    videoRenderer?.FadeIn();
                     await Task.WhenAll(
                         Task.Delay(500),
                         teamsCall.SendHtmlMessageAsync(personality.WelcomeTextMessage)
@@ -314,7 +324,7 @@ public class ScottAI
             // Goodbye
             virtualMic.SpeakNow(speechLibrary.Goodbye.Data);
             await Task.Delay(500);
-            openGl?.FadeOut();
+            videoRenderer?.FadeOut();
             await Task.Delay(speechLibrary.Goodbye.AudioDuration);
 
             if (call.State == CallState.Connected || call.State == CallState.InLobby)
