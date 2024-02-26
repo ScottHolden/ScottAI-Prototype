@@ -19,6 +19,9 @@
     <PackageReference Include="Azure.Identity" Version="1.10.4" />
   </ItemGroup>
   <ItemGroup>
+    <None Update="config.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="meeting.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
