@@ -12,11 +12,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScottAIPrototype.Video.ShaderExample", "ScottAIPrototype.Video.ShaderExample\ScottAIPrototype.Video.ShaderExample.csproj", "{2AB3A834-B03A-4E69-9068-0B82A0D59D0B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ScottAIPrototype.Video.ShaderExample", "ScottAIPrototype.Video.ShaderExample\ScottAIPrototype.Video.ShaderExample.csproj", "{2AB3A834-B03A-4E69-9068-0B82A0D59D0B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScottAIPrototype.Video.FixedImage", "ScottAIPrototype.Video.FixedImage\ScottAIPrototype.Video.FixedImage.csproj", "{4B0A8907-1056-40E5-8B6D-0DF989866E9B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ScottAIPrototype.Video.FixedImage", "ScottAIPrototype.Video.FixedImage\ScottAIPrototype.Video.FixedImage.csproj", "{4B0A8907-1056-40E5-8B6D-0DF989866E9B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScottAIPrototype.Core", "ScottAIPrototype.Core\ScottAIPrototype.Core.csproj", "{539A0785-09FC-4B04-AF13-6F0D48FA5A47}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ScottAIPrototype.Core", "ScottAIPrototype.Core\ScottAIPrototype.Core.csproj", "{539A0785-09FC-4B04-AF13-6F0D48FA5A47}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScottAIPrototype.Knowledge.AzureAISearchSource", "ScottAIPrototype.Knowledge.AzureAISearchSource\ScottAIPrototype.Knowledge.AzureAISearchSource.csproj", "{21390784-9A43-441F-A806-D36D260D7A24}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -66,6 +68,14 @@ Global
 		{539A0785-09FC-4B04-AF13-6F0D48FA5A47}.Release|Any CPU.Build.0 = Release|Any CPU
 		{539A0785-09FC-4B04-AF13-6F0D48FA5A47}.Release|x64.ActiveCfg = Release|Any CPU
 		{539A0785-09FC-4B04-AF13-6F0D48FA5A47}.Release|x64.Build.0 = Release|Any CPU
+		{21390784-9A43-441F-A806-D36D260D7A24}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{21390784-9A43-441F-A806-D36D260D7A24}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{21390784-9A43-441F-A806-D36D260D7A24}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{21390784-9A43-441F-A806-D36D260D7A24}.Debug|x64.Build.0 = Debug|Any CPU
+		{21390784-9A43-441F-A806-D36D260D7A24}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{21390784-9A43-441F-A806-D36D260D7A24}.Release|Any CPU.Build.0 = Release|Any CPU
+		{21390784-9A43-441F-A806-D36D260D7A24}.Release|x64.ActiveCfg = Release|Any CPU
+		{21390784-9A43-441F-A806-D36D260D7A24}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
