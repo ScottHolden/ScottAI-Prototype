@@ -20,6 +20,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ScottAIPrototype.Core", "Sc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScottAIPrototype.Knowledge.AzureAISearchSource", "ScottAIPrototype.Knowledge.AzureAISearchSource\ScottAIPrototype.Knowledge.AzureAISearchSource.csproj", "{21390784-9A43-441F-A806-D36D260D7A24}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScottAIPrototype.AI.AzureOpenAI", "ScottAIPrototype.AI.AzureOpenAI\ScottAIPrototype.AI.AzureOpenAI.csproj", "{59598EC8-F163-4131-8817-B70D1702E56A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -76,6 +78,14 @@ Global
 		{21390784-9A43-441F-A806-D36D260D7A24}.Release|Any CPU.Build.0 = Release|Any CPU
 		{21390784-9A43-441F-A806-D36D260D7A24}.Release|x64.ActiveCfg = Release|Any CPU
 		{21390784-9A43-441F-A806-D36D260D7A24}.Release|x64.Build.0 = Release|Any CPU
+		{59598EC8-F163-4131-8817-B70D1702E56A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{59598EC8-F163-4131-8817-B70D1702E56A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{59598EC8-F163-4131-8817-B70D1702E56A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{59598EC8-F163-4131-8817-B70D1702E56A}.Debug|x64.Build.0 = Debug|Any CPU
+		{59598EC8-F163-4131-8817-B70D1702E56A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{59598EC8-F163-4131-8817-B70D1702E56A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{59598EC8-F163-4131-8817-B70D1702E56A}.Release|x64.ActiveCfg = Release|Any CPU
+		{59598EC8-F163-4131-8817-B70D1702E56A}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
