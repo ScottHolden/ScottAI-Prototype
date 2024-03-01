@@ -5,7 +5,7 @@ using Silk.NET.Windowing;
 
 namespace ScottAIPrototype;
 
-public class OpenGLVideoRenderer : IVideoRenderer
+public class OpenGLVideoRenderer(RenderSize _renderSize, ILogger _logger) : IVideoRenderer
 {
     private static readonly float[] vertices =
     [
@@ -21,106 +21,15 @@ public class OpenGLVideoRenderer : IVideoRenderer
         1u, 2u, 3u
     ];
 
-    private static readonly string vertexCode = """
-		#version 330 core
-		layout (location = 0) in vec2 position;            
-		layout (location = 1) in vec2 inTexCoord;
-
-		out vec2 texCoord;
-		void main(){
-			texCoord = inTexCoord;
-			gl_Position = vec4(position.x, position.y, 0.0f, 1.0f);
-		}
-		""";
-
-    private static readonly string fragmentCode = """
-		#version 330 core
-		uniform vec2 iResolution;
-		uniform vec3 iActivity;
-		uniform float iTime;
-		out vec4 fragColor;
-		vec2 fragCoord = gl_FragCoord.xy;
-
-		float noise(vec3 p)
-		{
-			vec3 i = floor(p);
-			vec4 a = dot(i, vec3(1., 57., 21.)) + vec4(0., 57., 21., 78.);
-			vec3 f = cos((p-i)*acos(-1.))*(-.5)+.5;
-			a = mix(sin(cos(a)*a),sin(cos(1.+a)*(1.+a)), f.x);
-			a.xy = mix(a.xz, a.yw, f.y);
-			return mix(a.x, a.y, f.z);
-		}
-
-		float sphere(vec3 p, vec4 spr)
-		{
-			return length(spr.xyz-p) - spr.w;
-		}
-
-		float flame(vec3 p)
-		{
-			float d = sphere(p*vec3(iActivity.y,.5,1.), vec4(.0,-1.,.0,1.));
-			return d + (noise(p+vec3(.0,iTime*2.,.0)) + noise(p*3.)*.5)*.25*(p.y);
-		}
-
-		float scene(vec3 p)
-		{
-			return min(100.-length(p) , abs(flame(p)) );
-		}
-
-		vec4 raymarch(vec3 org, vec3 dir)
-		{
-			float d = 0.0, glow = 0.0, eps = 0.02;
-			vec3  p = org;
-			bool glowed = false;
-			for(int i=0; i<64; i++)
-			{
-				d = scene(p) + eps;
-				p += d * dir;
-				if( d>eps )
-				{
-					if(flame(p) < .0)
-						glowed=true;
-					if(glowed)
-						glow = float(i)/64.;
-				}
-			}
-			return vec4(p,glow);
-		}
-
-		void main()
-		{
-			vec2 v = -1.0 + 2.0 * fragCoord.xy / iResolution.xy;
-			v.x *= iResolution.x/iResolution.y;
-			vec3 org = vec3(0., -2., 4.);
-			vec3 dir = normalize(vec3(v.x*1.6, -v.y, -1.5));
-			vec4 p = raymarch(org, dir);
-			vec4 col = mix(vec4(0.1,.5,.1,1.), vec4(0.1,.5,iActivity.x,1.), p.y*.02+.4);
-			fragColor = mix(vec4(0.), col, pow(p.w*2.,4.)) * iActivity.z;
-		}
-		""";
-    private readonly uint _width;
-    private readonly uint _height;
-    private float _targetActive = 0.1f;
-    private float _talking = 0.0f;
-    private float _targetOpacity = 0.0f;
-    private float currentActive = 0.1f;
-    private float currentTalking = 1.0f;
-    private float currentOpacity = 0.0f;
+    private readonly uint _width = _renderSize.Width;
+    private readonly uint _height = _renderSize.Height;
     private GL? gl = null;
     private uint fbo;
     private uint vao;
     private uint program;
     private IWindow? window = null;
     private readonly DateTime _initTime = DateTime.Now;
-    private readonly ILogger _logger;
-    public RenderSize RenderSize { get; }
-    public OpenGLVideoRenderer(RenderSize renderSize, ILogger logger)
-    {
-        _width = renderSize.Width;
-        _height = renderSize.Height;
-        RenderSize = renderSize;
-        _logger = logger;
-    }
+    public RenderSize RenderSize => _renderSize;
     public unsafe void Init()
     {
         var windowOptions = WindowOptions.Default with
@@ -176,8 +85,8 @@ public class OpenGLVideoRenderer : IVideoRenderer
 
         gl.BufferData<uint>(BufferTargetARB.ElementArrayBuffer, indices, BufferUsageARB.StaticDraw);
 
-        var vertexShader = BuildShader(gl, ShaderType.VertexShader, vertexCode);
-        var fragmentShader = BuildShader(gl, ShaderType.FragmentShader, fragmentCode);
+        var vertexShader = BuildShader(gl, new OneToOneVertexShader());
+        var fragmentShader = BuildShader(gl, new GhostFlameFragmentShader());
 
         program = BuildProgram(gl, vertexShader, fragmentShader);
         ShaderCleanup(gl, program, vertexShader, fragmentShader);
@@ -193,13 +102,13 @@ public class OpenGLVideoRenderer : IVideoRenderer
 
         _logger.LogInformation("vao built");
     }
-    private static uint BuildShader(GL gl, ShaderType shaderType, string code)
+    private static uint BuildShader(GL gl, IShader shaderSource)
     {
-        var shader = gl.CreateShader(shaderType);
-        gl.ShaderSource(shader, code);
+        var shader = gl.CreateShader(shaderSource.ShaderType);
+        gl.ShaderSource(shader, shaderSource.Source);
         gl.CompileShader(shader);
         gl.GetShader(shader, ShaderParameterName.CompileStatus, out var status);
-        if (status != (int)GLEnum.True) throw new Exception($"Failed to compile {shaderType}: {gl.GetShaderInfoLog(shader)}");
+        if (status != (int)GLEnum.True) throw new Exception($"Failed to compile {shaderSource.ShaderType}: {gl.GetShaderInfoLog(shader)}");
         return shader;
     }
     private static void ShaderCleanup(GL gl, uint program, params uint[] shaders)
@@ -216,14 +125,17 @@ public class OpenGLVideoRenderer : IVideoRenderer
         if (status != (int)GLEnum.True) throw new Exception("Failed to link program: " + gl.GetProgramInfoLog(program));
         return program;
     }
+    private float _talking = 0.0f;
+    private float currentTalking = 1.0f;
+
+
+    private readonly LerpStep _active = new(0.1f, 0.1f, 1.0f, 0.1f, 0.1f);
+    private readonly LerpStep _opacity = new(0.05f, 0.0f, 1.0f, 0.0f, 0.0f);
     public unsafe void Render(byte* arrayBuffer)
     {
         if (gl == null || window == null) throw new Exception("NOT INITED!");
-        if (currentActive < _targetActive) currentActive = Math.Min(currentActive + 0.1f, 1.0f);
-        else if (currentActive > _targetActive) currentActive = Math.Max(currentActive - 0.1f, 0.1f);
-
-        if (currentOpacity < _targetOpacity) currentOpacity = Math.Min(currentOpacity + 0.05f, 1.0f);
-        else if (currentOpacity > _targetOpacity) currentOpacity = Math.Max(currentOpacity - 0.05f, 0.0f);
+        _active.Step();
+        _opacity.Step();
 
         var tv = 1.0f - _talking / 5f;
         currentTalking = Math.Clamp((currentTalking + tv + tv) / 3f, 0.8f, 1f);
@@ -241,7 +153,7 @@ public class OpenGLVideoRenderer : IVideoRenderer
         var ul3 = gl.GetUniformLocation(program, "iActivity");
         gl.Uniform2(ul1, (float)(_width), (float)(_height));
         gl.Uniform1(ul2, (float)(DateTime.Now - _initTime).TotalMilliseconds / 1000f);
-        gl.Uniform3(ul3, currentActive, currentTalking, currentOpacity);
+        gl.Uniform3(ul3, _active.Value, currentTalking, _opacity.Value);
 
         gl.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, (void*)0);
 
@@ -254,8 +166,8 @@ public class OpenGLVideoRenderer : IVideoRenderer
         gl?.Dispose();
         window?.Dispose();
     }
-    public void SetAs(bool active) => _targetActive = active ? 1.0f : 0.1f;
+    public void SetAs(bool active) => _active.SetTarget(active ? 1.0f : 0.1f);
     public void SetAmp(float value) => _talking = Math.Clamp(value, 0.0f, 1.0f);
-    public void FadeIn() => _targetOpacity = 1.0f;
-    public void FadeOut() => _targetOpacity = 0.0f;
+    public void FadeIn() => _opacity.SetTarget(1.0f);
+    public void FadeOut() => _opacity.SetTarget(0.0f);
 }

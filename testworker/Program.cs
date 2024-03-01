@@ -1,22 +1,33 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using ScottAIPrototype;
+using VoiceChat;
 
-// Read the meeting URL from a txt file (easy to update)
-var meetingLink = File.ReadAllText("meeting.txt").Trim();
-if (string.IsNullOrWhiteSpace(meetingLink)) throw new Exception("Teams meeting link is required in meeting.txt");
-
-// You can load config from a json file
-var config = await ScottAIConfig.ConfigFromFileAsync("config.json");
+HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
 // We can control certain features of ScottAI via flags
-var flags = FeatureFlags.Default with
+builder.Services.AddSingleton<FeatureFlags>(FeatureFlags.Default with
 {
     // AgentNameOverride = "NotScottAI"
-};
+});
+builder.Services.AddSingleton<TeamsMeeting>(services =>
+{
+    var meetingLink = File.ReadAllText("meeting.txt").Trim();
+    if (string.IsNullOrWhiteSpace(meetingLink))
+    {
+        throw new Exception("Teams meeting link is required in meeting.txt");
+    }
+    return new TeamsMeeting(meetingLink);
+});
 
-// As this is running single instance locally, build a console logger
-using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-var logger = loggerFactory.CreateLogger<ScottAI>();
+builder.Services.BindConfiguration<VoiceChatSpeechConfig>("Speech");
+builder.Services.BindConfiguration<VoiceChatACSConfig>("ACS");
+builder.Services.BindConfiguration<VoiceChatOpenAIConfig>("OpenAI");
 
-// Run will automatically join the call, and will only return once asked to leave/kicked
-await ScottAI.RunAsync(config, meetingLink, flags, logger);
+builder.Services.AddSingleton<VirtualMic>();
+builder.Services.AddSingleton<AzureSpeech>();
+builder.Services.AddSingleton<ScottAI>();
+builder.Services.AddHostedService<ScottAIService>();
+
+// Build and run!
+builder.Build().Run();

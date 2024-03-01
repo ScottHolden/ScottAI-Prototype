@@ -7,9 +7,21 @@ using VoiceChat;
 using WinRT;
 
 namespace ScottAIPrototype;
-public class ScottAI
+public class AzureOpenAIHelper
 {
-    public static async Task RunAsync(VoiceChatConfig config, string teamsMeetingLink, FeatureFlags flags, ILogger logger)
+
+}
+public record TeamsMeeting(string TeamsMeetingLink);
+public class ScottAI(
+    TeamsMeeting meeting,
+    VirtualMic virtualMic,
+    AzureSpeech azureSpeech,
+    FeatureFlags flags,
+    VoiceChatOpenAIConfig openAIConfig,
+    VoiceChatACSConfig acsConfig,
+    ILogger<ScottAI> logger)
+{
+    public async Task RunAsync(CancellationToken cancellationToken)
     {
         logger.LogInformation("Setting up ScottAI...");
 
@@ -24,19 +36,9 @@ public class ScottAI
             };
         }
 
-        // Set up our TTS and STT connections
-        var azureSpeech = new AzureSpeech(config.Speech, flags);
-        if (flags.DebugLogging)
-        {
-            azureSpeech.ConfigureSpeechDebugLogging(logger);
-        }
-
         // Cache some common responses
         logger.LogInformation("Building common speech library...");
         var speechLibrary = await CachedSpeechLibrary.BuildAsync("speechCache", azureSpeech.SpeechSynthesizer, logger);
-
-        // Build our virtual mic, but don't start it yet.
-        var virtualMic = new VirtualMic();
 
         // Configure our signaling & interruption path
         TaskCompletionSource callOver = new();
@@ -61,10 +63,10 @@ public class ScottAI
         var personality = new Personality(skills, flags);
 
         // Configure Azure Open AI, starting prompt, and warm up
-        var openAIClient = new OpenAIClient(new Uri(config.OpenAI.Endpoint), new AzureKeyCredential(config.OpenAI.Key));
+        var openAIClient = new OpenAIClient(new Uri(openAIConfig.Endpoint), new AzureKeyCredential(openAIConfig.Key));
         var chatCompletionsOptions = new ChatCompletionsOptions()
         {
-            DeploymentName = config.OpenAI.Deployment,
+            DeploymentName = openAIConfig.Deployment,
             Messages =
             {
                 new ChatRequestSystemMessage(personality.Prompt),
@@ -75,7 +77,7 @@ public class ScottAI
         logger.LogInformation("OpenAI SDK Ready");
 
         // Set up our ACS Call and Chat clients
-        var teamsCall = await ACSTeamsCall.CreateAgentAsync(config.ACS, personality.Name, teamsMeetingLink);
+        var teamsCall = await ACSTeamsCall.CreateAgentAsync(acsConfig, personality.Name, meeting.TeamsMeetingLink);
         if (flags.DebugLogging)
         {
             teamsCall.ConfigureStreamDebugLogging(logger);
@@ -349,4 +351,6 @@ public class ScottAI
         }
         logger.LogInformation("EOF");
     }
+
+
 }

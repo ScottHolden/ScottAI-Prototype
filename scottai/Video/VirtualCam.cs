@@ -14,13 +14,13 @@ internal class VirtualCam
     private readonly TaskCompletionSource _startedTaskCompletionSource = new();
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private VirtualOutgoingVideoStream? _stream;
-    private readonly IVideoRenderer _renderer;
+    private readonly IVideoRenderer? _renderer;
     private readonly ILogger _logger;
-    public VirtualCam(IVideoRenderer renderer, ILogger logger)
+    public VirtualCam(IVideoRenderer? renderer, ILogger logger)
     {
-        var renderSize = renderer.RenderSize;
-        _width = renderSize.Width;
-        _height = renderSize.Height;
+        var renderSize = renderer?.RenderSize;
+        _width = renderSize?.Width ?? 0;
+        _height = renderSize?.Height ?? 0;
         _renderer = renderer;
         _logger = logger;
         _thread = new Thread(Run);
@@ -41,6 +41,7 @@ internal class VirtualCam
     }
     private unsafe void Run()
     {
+        if (_renderer == null) return;
         try
         {
             _logger.LogInformation("VC Starting...");
