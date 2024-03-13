@@ -12,6 +12,29 @@ public class AzureOpenAIBackend(
         new Uri(_config.Endpoint),
         new Azure.AzureKeyCredential(_config.Key)
     );
+
+    public async Task<ChatMessage> GetChatCompletion(IEnumerable<ChatMessage> messages)
+    {
+        var options = new ChatCompletionsOptions(_config.ChatDeployment, ToChatRequestMessages(messages));
+        var result = await _openAIClient.GetChatCompletionsAsync(options);
+        _logger.LogInformation("Chat deployment usage '{deployment}', prompt tokens: {promptTokens}, completion tokens: {completionTokens}", _config.ChatDeployment, result.Value.Usage.PromptTokens, result.Value.Usage.CompletionTokens);
+        return ToChatMessage(result.Value.Choices[0].Message);
+    }
+    private static ChatMessage ToChatMessage(ChatResponseMessage message)
+        => new(message.Role.ToString() switch
+        {
+            "user" => ChatMessageRole.User,
+            "assistant" => ChatMessageRole.Assistant,
+            _ => throw new NotImplementedException(),
+        }, message.Content);
+    private static IEnumerable<ChatRequestMessage> ToChatRequestMessages(IEnumerable<ChatMessage> messages)
+        => messages.Select(x => (ChatRequestMessage)(x.Role switch
+        {
+            ChatMessageRole.System => new ChatRequestSystemMessage(x.Content),
+            ChatMessageRole.User => new ChatRequestUserMessage(x.Content),
+            ChatMessageRole.Assistant => new ChatRequestAssistantMessage(x.Content),
+            _ => throw new NotImplementedException(),
+        }));
     public async Task<ReadOnlyMemory<float>> GetEmbeddingAsync(string input)
     {
         var options = new EmbeddingsOptions(_config.EmbeddingDeployment, [input]);

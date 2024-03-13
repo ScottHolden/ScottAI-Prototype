@@ -259,15 +259,18 @@ public class ScottAI(
                 // Configurable video renderers!
                 // OpenGL Shader - The "ghost" image
 
-                videoRenderer = new OpenGLVideoRenderer(teamsCall.RenderSize, logger);
+                //videoRenderer = new OpenGLVideoRenderer(teamsCall.RenderSize, logger);
 
                 // Fixed image
 
-                //string imagePath = "example.png";
+                //string imagePath = @"robot-face.jpg";
                 //videoRenderer = new FixedImageVideoRenderer(teamsCall.RenderSize, imagePath, logger);
 
-                vc = new VirtualCam(videoRenderer, logger);
-                await vc.StartAsync(teamsCall.RawOutgoingVideoStream);
+                if (videoRenderer != null)
+                {
+                    vc = new VirtualCam(videoRenderer, logger);
+                    await vc.StartAsync(teamsCall.RawOutgoingVideoStream);
+                }
             }
             catch (Exception ex)
             {
