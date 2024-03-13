@@ -251,8 +251,8 @@ public class ScottAI(
 
                 // Fixed image
 
-                //string imagePath = @"robot-face.jpg";
-                //videoRenderer = new FixedImageVideoRenderer(teamsCall.RenderSize, imagePath, logger);
+                string imagePath = @"robot-face.jpg";
+                videoRenderer = new FixedImageVideoRenderer(teamsCall.RenderSize, imagePath, logger);
 
                 if (videoRenderer != null)
                 {
