@@ -35,19 +35,14 @@ internal class GhostFlameFragmentShader : IShader
         	return d + (noise(p+vec3(.0,iTime*2.,.0)) + noise(p*3.)*.5)*.25*(p.y);
         }
         
-        float scene(vec3 p)
-        {
-        	return min(100.-length(p) , abs(flame(p)) );
-        }
-        
         vec4 raymarch(vec3 org, vec3 dir)
         {
         	float d = 0.0, glow = 0.0, eps = 0.02;
-        	vec3  p = org;
+        	vec3 p = org;
         	bool glowed = false;
         	for(int i=0; i<64; i++)
         	{
-        		d = scene(p) + eps;
+        		d = min(100.-length(p) , abs(flame(p))) + eps;
         		p += d * dir;
         		if( d>eps )
         		{
