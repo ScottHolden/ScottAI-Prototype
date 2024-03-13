@@ -27,6 +27,13 @@ builder.Services.AddSingleton<VirtualMic>();
 builder.Services.AddSingleton<AzureSpeech>();
 builder.Services.AddSingleton<ScottAI>();
 builder.Services.AddSingleton<IAIBackend, AzureOpenAIBackend>();
+
+// Use fixed image
+builder.Services.AddSingleton(new FixedImageVideoRendererConfig("robot-face.jpg"));
+builder.Services.AddSingleton<IVideoRenderer, FixedImageVideoRenderer>();
+// Option for OpenGL
+//builder.Services.AddSingleton<IVideoRenderer, OpenGLVideoRenderer>();
+
 builder.Services.AddHostedService<ScottAIService>();
 
 // Build and run!

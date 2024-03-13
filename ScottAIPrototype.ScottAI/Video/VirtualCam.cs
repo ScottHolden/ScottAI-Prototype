@@ -8,27 +8,24 @@ namespace VoiceChat;
 
 internal class VirtualCam
 {
-    private readonly uint _width;
-    private readonly uint _height;
     private readonly Thread _thread;
     private readonly TaskCompletionSource _startedTaskCompletionSource = new();
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private VirtualOutgoingVideoStream? _stream;
+    private RenderSize? _renderSize;
     private readonly IVideoRenderer? _renderer;
     private readonly ILogger _logger;
     public VirtualCam(IVideoRenderer? renderer, ILogger logger)
     {
-        var renderSize = renderer?.RenderSize;
-        _width = renderSize?.Width ?? 0;
-        _height = renderSize?.Height ?? 0;
         _renderer = renderer;
         _logger = logger;
         _thread = new Thread(Run);
     }
-    public Task StartAsync(VirtualOutgoingVideoStream stream)
+    public Task StartAsync(VirtualOutgoingVideoStream stream, RenderSize renderSize)
     {
         if (!_startedTaskCompletionSource.Task.IsCompleted && !_thread.IsAlive)
         {
+            _renderSize = renderSize;
             _stream = stream;
             _thread.Start();
         }
@@ -41,7 +38,7 @@ internal class VirtualCam
     }
     private unsafe void Run()
     {
-        if (_renderer == null) return;
+        if (_renderer == null || _renderSize == null) return;
         try
         {
             _logger.LogInformation("VC Starting...");
@@ -51,11 +48,11 @@ internal class VirtualCam
                 return;
             }
 
-            using var memoryBuffer = new MemoryBuffer(4 * _width * _height);
+            using var memoryBuffer = new MemoryBuffer(4 * _renderSize.Width * _renderSize.Height);
             using var memoryBufferReference = memoryBuffer.CreateReference();
             var memoryBufferByteAccess = memoryBufferReference.As<IMemoryBufferByteAccess>() ?? throw new Exception("Unable to get IMemoryBufferByteAccess");
 
-            _renderer.Init();
+            _renderer.Init(_renderSize);
 
             _logger.LogInformation("VC Started");
             _startedTaskCompletionSource.SetResult();

@@ -13,12 +13,12 @@ _Note: The name ScottAI is only temporary, it may/will change at any time_
 - Voice, Video, and Chat access, allowing for multiple channels to be leveraged at once
 
 ## Getting Started
-**Note: The entry point in this repo is in the [testworker](testworker/) folder**
+**Note: The entry point in this repo is in the [ScottAIPrototype.Console](ScottAIPrototype.Console/) folder**
 1. Clone or download this repo
 1. Deploy the Bicep or ARM template located in the [deploy](deploy/) folder. Eg: `az deployment group create -g myResourceGroup -f deploy/deploy.bicep`
-1. Update the testworker [config.json](testworker/config.json) using the values from the resources deployed.
-1. Update the [meeting.txt](testworker/meeting.txt) file with a link to a teams meeting. This file should contain the URL and nothing else.
-1. Start ScottAI using Visual Studio, VSCode, or the following command within the [testworker](testworker/) folder: `dotnet run --runtime win10-x64 --no-self-contained -c Release`
+1. Update the ScottAIPrototype.Console [appsettings.json](ScottAIPrototype.Console/appsettings.json) using the values from the resources deployed.
+1. Update the [meeting.txt](ScottAIPrototype.Console/meeting.txt) file with a link to a teams meeting. This file should contain the URL and nothing else.
+1. Start ScottAI using Visual Studio, VSCode, or the following command within the [ScottAIPrototype.Console](ScottAIPrototype.Console/) folder: `dotnet run --runtime win10-x64 --no-self-contained -c Release`
 1. ScottAI should join the call once started, if you have the meeting not set to auto-accept guests it will prompt to accept once in the lobby.
 
 ## Single-Click Deploy for Azure Resources

@@ -5,7 +5,7 @@ using Silk.NET.Windowing;
 
 namespace ScottAIPrototype;
 
-public class OpenGLVideoRenderer(RenderSize _renderSize, ILogger _logger) : IVideoRenderer
+public class OpenGLVideoRenderer(ILogger _logger) : IVideoRenderer
 {
     private static readonly float[] vertices =
     [
@@ -21,17 +21,18 @@ public class OpenGLVideoRenderer(RenderSize _renderSize, ILogger _logger) : IVid
         1u, 2u, 3u
     ];
 
-    private readonly uint _width = _renderSize.Width;
-    private readonly uint _height = _renderSize.Height;
+    private uint _width = 0;
+    private uint _height = 0;
     private GL? gl = null;
     private uint fbo;
     private uint vao;
     private uint program;
     private IWindow? window = null;
     private readonly DateTime _initTime = DateTime.Now;
-    public RenderSize RenderSize => _renderSize;
-    public unsafe void Init()
+    public unsafe void Init(RenderSize renderSize)
     {
+        _width = renderSize.Width;
+        _height = renderSize.Height;
         var windowOptions = WindowOptions.Default with
         {
             Size = new Vector2D<int>((int)_width, (int)_height),
@@ -133,7 +134,7 @@ public class OpenGLVideoRenderer(RenderSize _renderSize, ILogger _logger) : IVid
     private readonly LerpStep _opacity = new(0.05f, 0.0f, 1.0f, 0.0f, 0.0f);
     public unsafe void Render(byte* arrayBuffer)
     {
-        if (gl == null || window == null) throw new Exception("NOT INITED!");
+        if (gl == null || window == null || _width == 0 || _height == 0) throw new Exception("NOT INITED!");
         _active.Step();
         _opacity.Step();
 

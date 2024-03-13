@@ -2,8 +2,7 @@
 
 public interface IVideoRenderer
 {
-    RenderSize RenderSize { get; }
-    void Init();
+    void Init(RenderSize renderSize);
     unsafe void Render(byte* arrayBuffer);
     void Dispose();
     void FadeIn();

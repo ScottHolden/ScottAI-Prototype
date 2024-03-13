@@ -12,6 +12,7 @@ public class ScottAI(
     AzureSpeech azureSpeech,
     FeatureFlags flags,
     IAIBackend aiBackend,
+    IVideoRenderer? videoRenderer,
     VoiceChatACSConfig acsConfig,
     ILogger<ScottAI> logger)
 {
@@ -230,9 +231,6 @@ public class ScottAI(
         await virtualMic.StartAsync(teamsCall.RawOutgoingAudioStream);
 
         // Set up our visuals
-        // This is a quick OpenGL shader to render something nice to look at
-        // We have feature flags to turn this off when not needed, or on machines with no GPU
-        IVideoRenderer? videoRenderer = null;
         VirtualCam? vc = null;
         if (flags.NoVideo)
         {
@@ -243,21 +241,10 @@ public class ScottAI(
             try
             {
                 logger.LogInformation("Setting up OpenGL...");
-
-                // Configurable video renderers!
-                // OpenGL Shader - The "ghost" image
-
-                //videoRenderer = new OpenGLVideoRenderer(teamsCall.RenderSize, logger);
-
-                // Fixed image
-
-                string imagePath = @"robot-face.jpg";
-                videoRenderer = new FixedImageVideoRenderer(teamsCall.RenderSize, imagePath, logger);
-
                 if (videoRenderer != null)
                 {
                     vc = new VirtualCam(videoRenderer, logger);
-                    await vc.StartAsync(teamsCall.RawOutgoingVideoStream);
+                    await vc.StartAsync(teamsCall.RawOutgoingVideoStream, teamsCall.RenderSize);
                 }
             }
             catch (Exception ex)
@@ -265,7 +252,7 @@ public class ScottAI(
                 logger.LogWarning(ex, "Error starting VideoRenderer/VirtualCam: {exceptionMessage}", ex.Message);
                 logger.LogWarning("Disabling VideoRenderer, switching to No Video");
                 vc = null;
-                videoRenderer?.Dispose();
+                //videoRenderer?.Dispose();
                 videoRenderer = null;
                 flags = flags with
                 {

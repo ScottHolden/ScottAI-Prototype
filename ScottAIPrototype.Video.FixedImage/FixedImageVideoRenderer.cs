@@ -4,32 +4,24 @@ using System.Runtime.InteropServices;
 
 namespace ScottAIPrototype;
 
-public class FixedImageVideoRenderer : IVideoRenderer
+public record FixedImageVideoRendererConfig(string ImagePath);
+public class FixedImageVideoRenderer(FixedImageVideoRendererConfig _config, ILogger _logger) : IVideoRenderer
 {
-    private readonly ILogger _logger;
-    public RenderSize RenderSize { get; }
     private SKBitmap? _fixedBitmap;
     private byte[]? _rgbaSource;
-    private readonly string _imagePath;
-    public FixedImageVideoRenderer(RenderSize renderSize, string imagePath, ILogger logger)
-    {
-        RenderSize = renderSize;
-        _logger = logger;
-        _imagePath = imagePath;
-    }
 
     public void Dispose()
     {
         _fixedBitmap?.Dispose();
     }
 
-    public void Init()
+    public void Init(RenderSize renderSize)
     {
         try
         {
-            _logger.LogInformation("Loading fixed image: {path}", _imagePath);
-            using var baseImage = SKBitmap.Decode(File.ReadAllBytes(_imagePath));
-            _fixedBitmap = new SKBitmap((int)RenderSize.Width, (int)RenderSize.Height, SKColorType.Rgba8888, SKAlphaType.Premul);
+            _logger.LogInformation("Loading fixed image: {path}", _config.ImagePath);
+            using var baseImage = SKBitmap.Decode(File.ReadAllBytes(_config.ImagePath));
+            _fixedBitmap = new SKBitmap((int)renderSize.Width, (int)renderSize.Height, SKColorType.Rgba8888, SKAlphaType.Premul);
             using (SKCanvas canvas = new(_fixedBitmap))
             {
                 SKRect sourceRect = new(0, 0, baseImage.Width, baseImage.Height);
