@@ -1,23 +1,17 @@
-﻿using Azure;
-using Azure.AI.OpenAI;
-using Azure.Communication.Calling.WindowsClient;
+﻿using Azure.Communication.Calling.WindowsClient;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using VoiceChat;
 using WinRT;
 
 namespace ScottAIPrototype;
-public class AzureOpenAIHelper
-{
-
-}
 public record TeamsMeeting(string TeamsMeetingLink);
 public class ScottAI(
     TeamsMeeting meeting,
     VirtualMic virtualMic,
     AzureSpeech azureSpeech,
     FeatureFlags flags,
-    VoiceChatOpenAIConfig openAIConfig,
+    IAIBackend aiBackend,
     VoiceChatACSConfig acsConfig,
     ILogger<ScottAI> logger)
 {
@@ -62,18 +56,12 @@ public class ScottAI(
         };
         var personality = new Personality(skills, flags);
 
+        List<ChatMessage> messages = [
+            new ChatMessage(ChatMessageRole.System, personality.Prompt)
+        ];
+
         // Configure Azure Open AI, starting prompt, and warm up
-        var openAIClient = new OpenAIClient(new Uri(openAIConfig.Endpoint), new AzureKeyCredential(openAIConfig.Key));
-        var chatCompletionsOptions = new ChatCompletionsOptions()
-        {
-            DeploymentName = openAIConfig.Deployment,
-            Messages =
-            {
-                new ChatRequestSystemMessage(personality.Prompt),
-            },
-            MaxTokens = 80
-        };
-        Response<ChatCompletions> response = await openAIClient.GetChatCompletionsAsync(chatCompletionsOptions);
+        await aiBackend.WarmUpAsync(CancellationToken.None);
         logger.LogInformation("OpenAI SDK Ready");
 
         // Set up our ACS Call and Chat clients
@@ -122,7 +110,7 @@ public class ScottAI(
                 {
                     if (message != null)
                     {
-                        chatCompletionsOptions.Messages.Add(new ChatRequestUserMessage(message));
+                        messages.Add(new ChatMessage(ChatMessageRole.User, message));
                         newMessages = true;
                     }
                 }
@@ -134,13 +122,13 @@ public class ScottAI(
                         cancel = new CancellationTokenSource();
                     }
                     lastSpoke = DateTime.Now;
-                    currentOutstanding = openAIClient.GetChatCompletionsAsync(chatCompletionsOptions, cancel.Token)
+                    currentOutstanding = aiBackend.GetChatCompletionAsync(messages, cancel.Token)
                             .ContinueWith(x =>
                             {
-                                logger.LogInformation("Response ({status}): {responseText}", x?.Status, x?.Result?.Value?.Choices[0].Message.Content);
+                                logger.LogInformation("Response ({status}): {responseText}", x?.Status, x?.Result.Content);
                                 lastSpoke = null;
                                 hmmCount = 0;
-                                var responseText = x?.Result.Value.Choices[0].Message.Content;
+                                var responseText = x?.Result.Content;
                                 if (x == null || string.IsNullOrWhiteSpace(responseText)) return;
                                 if (responseText.StartsWith("[LISTENING]", StringComparison.CurrentCultureIgnoreCase)) return;
                                 if (responseText.StartsWith("[EXIT]", StringComparison.CurrentCultureIgnoreCase))
@@ -165,7 +153,7 @@ public class ScottAI(
                                         return;
                                     }
                                 }
-                                chatCompletionsOptions.Messages.Add(new ChatRequestAssistantMessage(x.Result.Value.Choices[0].Message.Content));
+                                messages.Add(new ChatMessage(ChatMessageRole.Assistant, x.Result.Content));
                                 if (!isSpeaking)
                                 {
 

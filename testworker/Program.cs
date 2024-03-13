@@ -1,6 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using ScottAIPrototype;
+﻿using ScottAIPrototype;
+using ScottAIPrototype.AI.AzureOpenAI;
 using VoiceChat;
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
@@ -22,11 +21,12 @@ builder.Services.AddSingleton<TeamsMeeting>(services =>
 
 builder.Services.BindConfiguration<VoiceChatSpeechConfig>("Speech");
 builder.Services.BindConfiguration<VoiceChatACSConfig>("ACS");
-builder.Services.BindConfiguration<VoiceChatOpenAIConfig>("OpenAI");
+builder.Services.BindConfiguration<AzureOpenAIBackendConfig>("OpenAI");
 
 builder.Services.AddSingleton<VirtualMic>();
 builder.Services.AddSingleton<AzureSpeech>();
 builder.Services.AddSingleton<ScottAI>();
+builder.Services.AddSingleton<IAIBackend, AzureOpenAIBackend>();
 builder.Services.AddHostedService<ScottAIService>();
 
 // Build and run!

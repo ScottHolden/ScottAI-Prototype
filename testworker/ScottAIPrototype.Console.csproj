@@ -11,6 +11,7 @@
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\ScottAIPrototype.AI.AzureOpenAI\ScottAIPrototype.AI.AzureOpenAI.csproj" />
     <ProjectReference Include="..\scottai\ScottAIPrototype.ScottAI.csproj" />
   </ItemGroup>
   <ItemGroup>
