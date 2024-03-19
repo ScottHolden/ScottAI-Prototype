@@ -8,7 +8,7 @@ namespace ScottAIPrototype;
 
 public record AzureAISearchKnowledgeSourceConfig(string Endpoint, string Key, string Index);
 
-public class AzureAISearchKnowledgeSource(AzureAISearchKnowledgeSourceConfig _config) : IKnowledgeSource
+public class AzureAISearchKnowledgeSource(IAIBackend _aiBackend, AzureAISearchKnowledgeSourceConfig _config) : IKnowledgeSource
 {
     public string Name => "aisearch";
     private readonly SearchClient _searchClient = new(
@@ -21,8 +21,8 @@ public class AzureAISearchKnowledgeSource(AzureAISearchKnowledgeSourceConfig _co
     private readonly int _limit = 5;
     public async Task<string> QueryAsync(string input)
     {
-        // TODO: Add embedding generation
-        float[]? vector = null;
+        // TODO: Cancelation propagation
+        ReadOnlyMemory<float> vector = await _aiBackend.GetEmbeddingAsync(input, CancellationToken.None);
 
         // TODO: Add highlight based responses
         var searchOptions = new SearchOptions()

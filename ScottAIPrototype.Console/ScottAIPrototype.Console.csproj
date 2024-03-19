@@ -12,6 +12,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\ScottAIPrototype.AI.AzureOpenAI\ScottAIPrototype.AI.AzureOpenAI.csproj" />
+    <ProjectReference Include="..\ScottAIPrototype.Knowledge.AzureAISearchSource\ScottAIPrototype.Knowledge.AzureAISearchSource.csproj" />
     <ProjectReference Include="..\ScottAIPrototype.Video.FixedImage\ScottAIPrototype.Video.FixedImage.csproj" />
     <ProjectReference Include="..\ScottAIPrototype.Video.ShaderExample\ScottAIPrototype.Video.ShaderExample.csproj" />
     <ProjectReference Include="..\ScottAIPrototype.ScottAI\ScottAIPrototype.ScottAI.csproj" />

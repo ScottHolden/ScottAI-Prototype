@@ -29,24 +29,24 @@ internal class GhostFlameFragmentShader : IShader
         	return length(spr.xyz-p) - spr.w;
         }
         
-        float flame(vec3 p)
+        float ghost(vec3 p)
         {
         	float d = sphere(p*vec3(iActivity.y,.5,1.), vec4(.0,-1.,.0,1.));
         	return d + (noise(p+vec3(.0,iTime*2.,.0)) + noise(p*3.)*.5)*.25*(p.y);
         }
         
-        vec4 raymarch(vec3 org, vec3 dir)
+        vec4 ray(vec3 org, vec3 dir)
         {
         	float d = 0.0, glow = 0.0, eps = 0.02;
         	vec3 p = org;
         	bool glowed = false;
         	for(int i=0; i<64; i++)
         	{
-        		d = min(100.-length(p) , abs(flame(p))) + eps;
+        		d = min(100.-length(p) , abs(ghost(p))) + eps;
         		p += d * dir;
         		if( d>eps )
         		{
-        			if(flame(p) < .0)
+        			if(ghost(p) < .0)
         				glowed=true;
         			if(glowed)
         				glow = float(i)/64.;
@@ -61,7 +61,7 @@ internal class GhostFlameFragmentShader : IShader
         	v.x *= iResolution.x/iResolution.y;
         	vec3 org = vec3(0., -2., 4.);
         	vec3 dir = normalize(vec3(v.x*1.6, -v.y, -1.5));
-        	vec4 p = raymarch(org, dir);
+        	vec4 p = ray(org, dir);
         	vec4 col = mix(vec4(0.1,.5,.1,1.), vec4(0.1,.5,iActivity.x,1.), p.y*.02+.4);
         	fragColor = mix(vec4(0.), col, pow(p.w*2.,4.)) * iActivity.z;
         }

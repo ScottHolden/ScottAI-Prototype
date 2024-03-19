@@ -1,6 +1,7 @@
 ﻿using Azure.Communication.Calling.WindowsClient;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
+using System.Text;
 using VoiceChat;
 using WinRT;
 
@@ -13,6 +14,7 @@ public class ScottAI(
     FeatureFlags flags,
     IAIBackend aiBackend,
     IVideoRenderer? videoRenderer,
+    IKnowledgeSource[]? knowledgeSources,
     VoiceChatACSConfig acsConfig,
     ILogger<ScottAI> logger)
 {
@@ -95,6 +97,9 @@ public class ScottAI(
             }
         };
 
+        const int maxRagDataLength = 4000;
+        List<(DateTimeOffset Time, string Data)> ragData = [];
+
         // Main processing loop
         // TODO: Refactor to orchestrator, this is messy
         async Task Process(CancellationToken parentCancel)
@@ -104,6 +109,7 @@ public class ScottAI(
             DateTime? lastSpoke = null;
             int hmmCount = 0;
             int nextHmm = 4;
+            Task? lastRagTask = null;
             while (!parentCancel.IsCancellationRequested)
             {
                 bool newMessages = false;
@@ -113,6 +119,16 @@ public class ScottAI(
                     {
                         messages.Add(new ChatMessage(ChatMessageRole.User, message));
                         newMessages = true;
+                        // Implement knowledge lookup for new content
+                        if (knowledgeSources != null)
+                        {
+                            var messageTime = DateTimeOffset.UtcNow;
+                            foreach (var source in knowledgeSources)
+                            {
+                                lastRagTask = source.QueryAsync(message).ContinueWith(x => ragData.Add((messageTime, x.Result)), parentCancel);
+                            }
+
+                        }
                     }
                 }
                 if (newMessages)
@@ -122,8 +138,36 @@ public class ScottAI(
                         cancel.Cancel();
                         cancel = new CancellationTokenSource();
                     }
+                    if (lastRagTask != null)
+                    {
+                        await lastRagTask;
+                    }
+                    var ragDataStringBuilder = new StringBuilder();
+                    if (ragData.Count > 0)
+                    {
+                        // Could clean this up a bit
+                        List<(DateTimeOffset Time, string Data)> newRagData = [];
+                        int dataLength = 0;
+                        foreach (var data in ragData.OrderByDescending(x => x.Time))
+                        {
+                            newRagData.Add(data);
+                            if (dataLength > 0)
+                            {
+                                ragDataStringBuilder.Append("\n\n---\n\n");
+                            }
+                            if (data.Data.Length + dataLength > maxRagDataLength)
+                            {
+                                int limit = maxRagDataLength - dataLength;
+                                ragDataStringBuilder.Append(data.Data[..limit]);
+                                break;
+                            }
+                            ragDataStringBuilder.Append(data.Data);
+                        }
+                        // Swap our trimmed list back in
+                        ragData = newRagData;
+                    }
                     lastSpoke = DateTime.Now;
-                    currentOutstanding = aiBackend.GetChatCompletionAsync(messages, cancel.Token)
+                    currentOutstanding = aiBackend.GetChatCompletionAsync(messages, ragDataStringBuilder.ToString(), cancel.Token)
                             .ContinueWith(x =>
                             {
                                 logger.LogInformation("Response ({status}): {responseText}", x?.Status, x?.Result.Content);
