@@ -22,19 +22,22 @@ builder.Services.AddSingleton<TeamsMeeting>(services =>
 builder.Services.BindConfiguration<VoiceChatSpeechConfig>("Speech");
 builder.Services.BindConfiguration<VoiceChatACSConfig>("ACS");
 builder.Services.BindConfiguration<AzureOpenAIBackendConfig>("OpenAI");
-//builder.Services.BindConfiguration<AzureAISearchKnowledgeSourceConfig>("AISearch");
+builder.Services.BindConfiguration<AzureAISearchKnowledgeSourceConfig>("AISearch");
 
 builder.Services.AddSingleton<VirtualMic>();
 builder.Services.AddSingleton<AzureSpeech>();
 builder.Services.AddSingleton<ScottAI>();
 builder.Services.AddSingleton<IAIBackend, AzureOpenAIBackend>();
-/*
+builder.Services.AddSingleton<MetadataKnowledgeSource>();
+builder.Services.AddSingleton<AzureAISearchKnowledgeSource>();
+
 builder.Services.AddSingleton<IKnowledgeSource[]>(services =>
     [
+        services.GetRequiredService<MetadataKnowledgeSource>(),
         services.GetRequiredService<AzureAISearchKnowledgeSource>()
     ]
 );
-*/
+
 
 // Use fixed image
 builder.Services.AddSingleton(new FixedImageVideoRendererConfig("robot-face.jpg"));

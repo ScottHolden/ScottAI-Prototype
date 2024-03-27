@@ -33,6 +33,7 @@ public class AzureOpenAIBackend(
             ChatMessageRole.System => new ChatRequestSystemMessage(x.Content),
             ChatMessageRole.User => new ChatRequestUserMessage(x.Content),
             ChatMessageRole.Assistant => new ChatRequestAssistantMessage(x.Content),
+            ChatMessageRole.RagResult => new ChatRequestFunctionMessage("rag", x.Content),
             _ => throw new NotImplementedException(),
         }));
     public async Task<ReadOnlyMemory<float>> GetEmbeddingAsync(string input, CancellationToken cancellationToken)

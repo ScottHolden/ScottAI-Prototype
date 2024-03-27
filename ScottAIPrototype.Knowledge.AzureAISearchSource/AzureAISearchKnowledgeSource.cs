@@ -1,14 +1,14 @@
-﻿
-using Azure;
+﻿using Azure;
 using Azure.Search.Documents;
 using Azure.Search.Documents.Models;
+using Microsoft.Extensions.Logging;
 using System.Text;
 
 namespace ScottAIPrototype;
 
 public record AzureAISearchKnowledgeSourceConfig(string Endpoint, string Key, string Index);
 
-public class AzureAISearchKnowledgeSource(IAIBackend _aiBackend, AzureAISearchKnowledgeSourceConfig _config) : IKnowledgeSource
+public class AzureAISearchKnowledgeSource(IAIBackend _aiBackend, AzureAISearchKnowledgeSourceConfig _config, ILogger<AzureAISearchKnowledgeSource> _logger) : IKnowledgeSource
 {
     public string Name => "aisearch";
     private readonly SearchClient _searchClient = new(
@@ -22,6 +22,7 @@ public class AzureAISearchKnowledgeSource(IAIBackend _aiBackend, AzureAISearchKn
     public async Task<string> QueryAsync(string input)
     {
         // TODO: Cancelation propagation
+        _logger.LogInformation("Getting search embedding...");
         ReadOnlyMemory<float> vector = await _aiBackend.GetEmbeddingAsync(input, CancellationToken.None);
 
         // TODO: Add highlight based responses
@@ -35,7 +36,7 @@ public class AzureAISearchKnowledgeSource(IAIBackend _aiBackend, AzureAISearchKn
                     {
                         KNearestNeighborsCount = _limit,
                         Fields = {
-                            nameof(_embeddingFieldName)
+                            _embeddingFieldName
                         },
                     }
             }
@@ -50,6 +51,7 @@ public class AzureAISearchKnowledgeSource(IAIBackend _aiBackend, AzureAISearchKn
             },
         };
 
+        _logger.LogInformation("Searching...");
         var result = await _searchClient.SearchAsync<IndexFields>(input, searchOptions);
 
         StringBuilder output = new();
@@ -60,6 +62,7 @@ public class AzureAISearchKnowledgeSource(IAIBackend _aiBackend, AzureAISearchKn
             if (++count >= _limit) break;
         }
 
+        _logger.LogInformation("Found {count} results", count);
         return output.ToString();
     }
     private record IndexFields(string content);

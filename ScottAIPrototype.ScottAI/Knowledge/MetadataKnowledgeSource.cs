@@ -1,6 +1,6 @@
 ﻿namespace ScottAIPrototype;
 
-internal class MetadataKnowledgeSource : IKnowledgeSource
+public class MetadataKnowledgeSource : IKnowledgeSource
 {
     public string Name { get; } = "metadata";
 

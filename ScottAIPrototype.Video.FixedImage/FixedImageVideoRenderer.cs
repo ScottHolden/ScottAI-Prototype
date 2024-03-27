@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 namespace ScottAIPrototype;
 
 public record FixedImageVideoRendererConfig(string ImagePath);
-public class FixedImageVideoRenderer(FixedImageVideoRendererConfig _config, ILogger _logger) : IVideoRenderer
+public class FixedImageVideoRenderer(FixedImageVideoRendererConfig _config, ILogger<FixedImageVideoRenderer> _logger) : IVideoRenderer
 {
     private SKBitmap? _fixedBitmap;
     private byte[]? _rgbaSource;
